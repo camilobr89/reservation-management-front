@@ -1,14 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
-
-interface Movie {
-  id: string;
-  title: string;
-  genre: string;
-  duration: number;
-  rating: string;
-}
+import { Movie } from '../interfaces/Movie';
 
 interface ModalProps {
   message: string;
@@ -83,12 +76,12 @@ export const ManageMovies = () => {
   const deleteMovie = (id: string) => {
     api.delete(`/movies/${id}`)
       .then(() => {
-        setShowModal(false); // Primero cierra el modal de confirmación
+        setShowModal(false); 
         setTimeout(() => {
           setModalMessage('Película eliminada.');
           setModalAction(undefined);
-          setShowModal(true); // Luego abre un nuevo modal solo con resultado
-        }, 300); // Una pequeña pausa para asegurar el cierre del modal anterior
+          setShowModal(true);
+        }, 300);
         fetchMovies();
       })
       .catch(err => {

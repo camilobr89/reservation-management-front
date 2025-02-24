@@ -1,29 +1,11 @@
 import { useEffect, useState } from "react";
 import { api } from "../services/api";
-
-interface Movie {
-  id: string;
-  title: string;
-  genre: string;
-  duration: number;
-  rating: string;
-}
-
-interface Room {
-  id: string;
-  name: string;
-  capacity: number;
-}
-
-interface Reservation {
-  seats: string;
-}
-
-interface ModalProps {
-  message: string;
-  loading?: boolean;
-  onClose: () => void;
-}
+import { Movie } from "../interfaces/Movie";
+import { Room } from "../interfaces/Room";
+import { Reservation } from "../interfaces/Reservation";
+import { ModalProps } from "../interfaces/ModalProps";
+import { isValidEmail } from "../utils/validators";
+import { AVAILABLE_TIMES } from "../constants/schedules";
 
 export const MoviesList = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -46,13 +28,8 @@ export const MoviesList = () => {
   maxDate.setDate(maxDate.getDate() + 7);
   const maxAllowedDate = maxDate.toISOString().split('T')[0];
 
-  const isValidEmail = (email: string) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
-
-  const availableTimes = ["14:00", "17:00", "20:00"];
-
   const toggleSeatSelection = (seat: string) => {
     if (reservedSeats.includes(seat)) {
-      alert("Este asiento ya está reservado.");
       return;
     }
     setSelectedSeats(prevSeats =>
@@ -74,7 +51,7 @@ export const MoviesList = () => {
           setReservedSeats(occupiedSeats);
         })
         .catch(error => {
-          console.error("❌ Error al cargar reservaciones:", error);
+          console.error("Error al cargar reservaciones:", error);
           setReservedSeats([]);
         });
     } else {
@@ -82,7 +59,6 @@ export const MoviesList = () => {
     }
   }, [selectedRoom, selectedTime, selectedDate]);
   
-
   const Modal = ({ message, loading, onClose }: ModalProps) => (
     <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 backdrop-blur-md"
     style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
@@ -126,14 +102,11 @@ export const MoviesList = () => {
         ))}
       </div>
 
-      {/* ✅ Modal */}
-
-
-      {selectedMovie && (
-  <div 
-    className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-md"
-    style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }} // 🔥 Backup si Tailwind falla
-  >
+    {selectedMovie && (
+        <div 
+          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-md"
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
+        >
     <div className="bg-white p-8 rounded-xl shadow-2xl w-96 border border-gray-300 transition-all duration-300">
       {step === 1 && (
         <>
@@ -142,10 +115,9 @@ export const MoviesList = () => {
             <strong className="text-gray-700">Género:</strong> {selectedMovie.genre}
           </p>
 
-          {/* ✅ Selección de Horario */}
           <h3 className="mt-4 text-lg font-semibold text-gray-800 text-center">Selecciona un horario:</h3>
           <div className="flex justify-center gap-3 mt-2">
-            {availableTimes.map(time => (
+            {AVAILABLE_TIMES.map(time => (
               <button
                 key={time}
                 className={`px-4 py-2 rounded-full transition-all ${
@@ -170,166 +142,155 @@ export const MoviesList = () => {
           />
         </div>
 
-          {/* ✅ Selección de Sala */}
-          <h3 className="mt-4 text-lg font-semibold text-gray-800 text-center">Selecciona una sala:</h3>
-          <div className="flex flex-col gap-2 mt-2">
-            {rooms.map(room => (
+        <h3 className="mt-4 text-lg font-semibold text-gray-800 text-center">Selecciona una sala:</h3>
+        <div className="flex flex-col gap-2 mt-2">
+          {rooms.map(room => (
+            <button
+              key={room.id}
+              className={`px-4 py-2 rounded-lg transition-all ${
+                selectedRoom?.id === room.id ? "bg-green-500 text-white" : "bg-gray-200 text-gray-800 hover:bg-green-300"
+              }`}
+              onClick={() => setSelectedRoom(room)}
+            >
+              {room.name} (Capacidad: {room.capacity})
+            </button>
+          ))}
+        </div>
+
+          <div className="flex justify-between mt-4">
+            <button className="px-4 py-2 bg-red-500 text-white rounded" onClick={() => setSelectedMovie(null)}>Cerrar</button>
+            <button
+              className={`px-4 py-2 rounded transition ${
+                selectedTime && selectedRoom
+                  ? "bg-purple-400 text-white hover:bg-purple-500"
+                  : "bg-gray-400 text-white cursor-not-allowed"
+              }`}
+              onClick={() => selectedTime && selectedRoom && setStep(2)}
+              disabled={!selectedTime || !selectedRoom}
+            >
+              Reservar Asientos
+            </button>
+
+          </div>
+        </>
+      )}
+
+      {step === 2 && selectedRoom && (
+        <>
+          <h2 className="text-2xl font-bold text-white">Selecciona tu asiento</h2>
+          <div className="grid grid-cols-5 gap-2 mt-4">
+            {Array.from({ length: selectedRoom.capacity }, (_, i) => `A${i + 1}`).map(seat => (
               <button
-                key={room.id}
-                className={`px-4 py-2 rounded-lg transition-all ${
-                  selectedRoom?.id === room.id ? "bg-green-500 text-white" : "bg-gray-200 text-gray-800 hover:bg-green-300"
-                }`}
-                onClick={() => setSelectedRoom(room)}
+                key={seat}
+                className={`w-10 h-10 rounded ${
+                  reservedSeats.includes(seat) ? "bg-gray-400 text-white cursor-not-allowed" : 
+                  selectedSeats.includes(seat) ? "bg-green-500 text-white" : "bg-white text-gray-800 border border-gray-300 hover:bg-gray-100"
+                }`}                    
+                disabled={reservedSeats.includes(seat)}
+                onClick={() => toggleSeatSelection(seat)}
               >
-                {room.name} (Capacidad: {room.capacity})
+                {seat}
               </button>
             ))}
           </div>
 
-                <div className="flex justify-between mt-4">
-                  <button className="px-4 py-2 bg-red-500 text-white rounded" onClick={() => setSelectedMovie(null)}>Cerrar</button>
-                  <button
-                    className={`px-4 py-2 rounded transition ${
-                      selectedTime && selectedRoom
-                        ? "bg-purple-400 text-white hover:bg-purple-500"
-                        : "bg-gray-400 text-white cursor-not-allowed"
-                    }`}
-                    onClick={() => selectedTime && selectedRoom && setStep(2)}
-                    disabled={!selectedTime || !selectedRoom}
-                  >
-                    Reservar Asientos
-                  </button>
 
-                </div>
-              </>
-            )}
+          <div className="flex justify-between mt-4">
+            <button className="px-4 py-2 bg-red-500 text-white rounded" onClick={() => setStep(1)}>Atrás</button>
+            <button
+                className={`px-4 py-2 rounded transition ${
+                  selectedSeats.length > 0
+                    ? "bg-purple-400 text-white hover:bg-purple-500"
+                    : "bg-gray-400 text-white cursor-not-allowed"
+                }`}
+                onClick={() => selectedSeats.length > 0 && setStep(3)}
+                disabled={selectedSeats.length === 0}
+              >
+                Continuar
+              </button>
 
-            {/* ✅ Paso 2: Selección de asiento */}
-            {step === 2 && selectedRoom && (
-              <>
-                <h2 className="text-2xl font-bold text-white">Selecciona tu asiento</h2>
-                <div className="grid grid-cols-5 gap-2 mt-4">
-                  {Array.from({ length: selectedRoom.capacity }, (_, i) => `A${i + 1}`).map(seat => (
-                    <button
-                      key={seat}
-                      className={`w-10 h-10 rounded ${
-                        reservedSeats.includes(seat) ? "bg-gray-400 text-white cursor-not-allowed" : 
-                        selectedSeats.includes(seat) ? "bg-green-500 text-white" : "bg-white text-gray-800 border border-gray-300 hover:bg-gray-100"
-                      }`}                    
-                      disabled={reservedSeats.includes(seat)}
-                      onClick={() => toggleSeatSelection(seat)}
-                    >
-                      {seat}
-                    </button>
-                  ))}
-                </div>
-
-
-                <div className="flex justify-between mt-4">
-                  <button className="px-4 py-2 bg-red-500 text-white rounded" onClick={() => setStep(1)}>Atrás</button>
-                  <button
-                      className={`px-4 py-2 rounded transition ${
-                        selectedSeats.length > 0
-                          ? "bg-purple-400 text-white hover:bg-purple-500"
-                          : "bg-gray-400 text-white cursor-not-allowed"
-                      }`}
-                      onClick={() => selectedSeats.length > 0 && setStep(3)}
-                      disabled={selectedSeats.length === 0}
-                    >
-                      Continuar
-                    </button>
-
-                </div>
-              </>
-            )}
-
-            {/* ✅ Paso 3: Ingresar Email y Confirmar Reserva */}
-            {step === 3 && (
-              <>
-                <h2 className="text-2xl font-bold text-white">Ingresa tu correo</h2>
-                <input
-                    type="email"
-                    className={`w-full p-2 mt-2 rounded bg-white text-gray-800 border ${
-                      isEmailValid ? "border-gray-300" : "border-red-500"
-                    }`}
-                    placeholder="correo@email.com"
-                    value={userEmail}
-                    onChange={e => {
-                      setUserEmail(e.target.value);
-                      setIsEmailValid(isValidEmail(e.target.value));
-                    }}
-                  />
-
-
-                <div className="flex justify-between mt-4">
-                  <button className="px-4 py-2 bg-red-500 text-white rounded" onClick={() => setStep(2)}>Atrás</button>
-                  <button
-                    className={`px-4 py-2 rounded transition ${
-                      isValidEmail(userEmail)
-                        ? "bg-purple-400 text-white hover:bg-purple-500"
-                        : "bg-gray-400 text-white cursor-not-allowed"
-                    }`}
-                    onClick={() => {
-                      if (isValidEmail(userEmail)) {
-                        setSelectedMovie(null);
-                        setModalMessage("Realizando reserva, espera...");
-                        setIsLoading(true);
-                        setShowModal(true);
-                    
-                        api.post("/reservations", {
-                          movieId: selectedMovie?.id,
-                          roomId: selectedRoom?.id,
-                          seats: selectedSeats,
-                          userEmail,
-                          schedule: `${selectedDate} ${selectedTime}`,
-                        })
-                        .then(() => {
-                          setModalMessage("🎟️ Reserva confirmada, revisa tu correo!");
-                          setIsLoading(false);
-                          setSelectedMovie(null); // Cerramos aquí, después del éxito
-                        })
-                        .catch((error) => {
-                          console.error("❌ Error al enviar reserva:", error);
-                          setModalMessage("❌ Error al realizar la reserva. Inténtalo nuevamente.");
-                          setIsLoading(false);
-                        });
-                      }
-                    }}
-                    
-                    disabled={!isValidEmail(userEmail)}
-                  >
-                    Confirmar Reserva
-                  </button>
-
-                  {showModal && (
-                    <Modal
-                      message={modalMessage}
-                      loading={isLoading}
-                      onClose={() => {
-                        setShowModal(false);
-                        if (!isLoading && modalMessage.includes("confirmada")) {
-                          setSelectedMovie(null);
-                        }
-                      }}
-                    />
-                  )}
-
-                </div>
-              </>
-            )}
           </div>
-        </div>
+        </>
       )}
-        {/* Esto va al final del return, FUERA del modal principal */}
-  {showModal && (
-    <Modal
-      message={modalMessage}
-      loading={isLoading}
-      onClose={() => setShowModal(false)}
-    />
+
+      {step === 3 && (
+        <>
+          <h2 className="text-2xl font-bold text-white">Ingresa tu correo</h2>
+          <input
+              type="email"
+              className={`w-full p-2 mt-2 rounded bg-white text-gray-800 border ${
+                isEmailValid ? "border-gray-300" : "border-red-500"
+              }`}
+              placeholder="correo@email.com"
+              value={userEmail}
+              onChange={e => {
+                setUserEmail(e.target.value);
+                setIsEmailValid(isValidEmail(e.target.value));
+              }}
+            />
+
+          <div className="flex justify-between mt-4">
+            <button className="px-4 py-2 bg-red-500 text-white rounded" onClick={() => setStep(2)}>Atrás</button>
+            <button
+              className={`px-4 py-2 rounded transition ${
+                isValidEmail(userEmail)
+                  ? "bg-purple-400 text-white hover:bg-purple-500"
+                  : "bg-gray-400 text-white cursor-not-allowed"
+              }`}
+              onClick={() => {
+                if (isValidEmail(userEmail)) {
+                  setSelectedMovie(null);
+                  setModalMessage("Realizando reserva, espera...");
+                  setIsLoading(true);
+                  setShowModal(true);
+              
+                  api.post("/reservations", {
+                    movieId: selectedMovie?.id,
+                    roomId: selectedRoom?.id,
+                    seats: selectedSeats,
+                    userEmail,
+                    schedule: `${selectedDate} ${selectedTime}`,
+                  })
+                  .then(() => {
+                    setModalMessage("🎟️ Reserva confirmada, revisa tu correo!");
+                    setIsLoading(false);
+                    setSelectedMovie(null);
+                  })
+                  .catch((error) => {
+                    console.error("Error al enviar reserva:", error);
+                    setModalMessage("Error al realizar la reserva. Inténtalo nuevamente.");
+                    setIsLoading(false);
+                  });
+                }
+              }}
+              
+              disabled={!isValidEmail(userEmail)}
+            >
+              Confirmar Reserva
+            </button>
+
+            {showModal && (
+              <Modal
+                message={modalMessage}
+                loading={isLoading}
+                onClose={() => {
+                  setShowModal(false);
+                  if (!isLoading && modalMessage.includes("confirmada")) {
+                    setSelectedMovie(null);
+                  }
+                }}
+              />
+            )}
+
+          </div>
+        </>
+      )}
+      </div>
+    </div>
   )}
 
-    </div>
-    
+    {showModal && ( <Modal message={modalMessage} loading={isLoading} onClose={() => setShowModal(false)}/>)}
+
+  </div>
   );
 };

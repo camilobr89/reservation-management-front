@@ -1,12 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
-
-interface Room {
-  id: string;
-  name: string;
-  capacity: number;
-}
+import { Room } from '../interfaces/Room';
 
 interface ModalProps {
   message: string;

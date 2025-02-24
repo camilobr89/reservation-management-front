@@ -1,14 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
+import { Movie } from "../interfaces/Movie";
 
-interface Movie {
-  id: string;
-  title: string;
-  genre: string;
-  duration: number;
-  rating: string;
-}
 
 export const MovieDetails = () => {
   const { id } = useParams<{ id: string }>();

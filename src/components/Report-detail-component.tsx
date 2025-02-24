@@ -28,7 +28,6 @@ interface Reservation {
         });
     };
   
-    // Estadísticas de películas más reservadas (usando movieTitle)
     const movieStats = reservations.reduce<Record<string, number>>((acc, curr) => {
       acc[curr.movieTitle] = (acc[curr.movieTitle] || 0) + curr.seats.length;
       return acc;
@@ -38,7 +37,6 @@ interface Reservation {
       movieTitle, count
     }));
   
-    // Estadísticas de horarios más populares (hora real)
     const timeStats = reservations.reduce<Record<string, number>>((acc, curr) => {
       const time = new Date(curr.schedule.replace(' ', 'T')).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       acc[time] = (acc[time] || 0) + curr.seats.length;
