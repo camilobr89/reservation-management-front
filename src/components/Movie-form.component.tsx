@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
-import { api } from '../services/api';
+import { movieService } from '../services/movieService';
 import { Movie } from '../interfaces/Movie';
 
 interface ModalProps {
@@ -9,6 +9,14 @@ interface ModalProps {
   onClose: () => void;
 }
 
+type ApiError = {
+  response?: {
+    data?: {
+      error?: string;
+    };
+  };
+};
+
 export const ManageMovies = () => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
@@ -16,6 +24,7 @@ export const ManageMovies = () => {
   const [genre, setGenre] = useState('');
   const [duration, setDuration] = useState('');
   const [rating, setRating] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
@@ -25,8 +34,13 @@ export const ManageMovies = () => {
     fetchMovies();
   }, []);
 
-  const fetchMovies = () => {
-    api.get('/movies').then(res => setMovies(res.data));
+  const fetchMovies = async () => {
+    try {
+      const data = await movieService.getAll();
+      setMovies(data);
+    } catch {
+      showErrorModal('Error al cargar las películas');
+    }
   };
 
   const resetForm = () => {
@@ -37,33 +51,45 @@ export const ManageMovies = () => {
     setRating('');
   };
 
-  const saveMovie = () => {
-    const payload = { title, genre, duration: Number(duration), rating };
+  const showErrorModal = (message: string) => {
+    setModalMessage(message);
+    setModalAction(undefined);
+    setShowModal(true);
+  };
 
-    if (editingMovie) {
-      api.put(`/movies/${editingMovie.id}`, payload)
-        .then(() => {
-          setModalMessage('Película actualizada.');
-          setShowModal(true);
-          fetchMovies();
-          resetForm();
-        })
-        .catch(err => {
-          setModalMessage(err.response.data.error || 'Error al actualizar');
-          setShowModal(true);
-        });
-    } else {
-      api.post('/movies', payload)
-        .then(() => {
-          setModalMessage('Película agregada.');
-          setShowModal(true);
-          fetchMovies();
-          resetForm();
-        })
-        .catch(err => {
-          setModalMessage(err.response.data.error || 'Error al agregar');
-          setShowModal(true);
-        });
+  const showSuccessModal = (message: string) => {
+    setModalMessage(message);
+    setModalAction(undefined);
+    setShowModal(true);
+  };
+
+  const saveMovie = async () => {
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      const payload = { 
+        title, 
+        genre, 
+        duration: Number(duration), 
+        rating 
+      };
+
+      if (editingMovie) {
+        await movieService.update(editingMovie.id, payload);
+        showSuccessModal('Película actualizada.');
+      } else {
+        await movieService.create(payload);
+        showSuccessModal('Película agregada.');
+      }
+
+      await fetchMovies();
+      resetForm();
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      showErrorModal(apiError?.response?.data?.error || 'Error al guardar la película');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,27 +99,23 @@ export const ManageMovies = () => {
     setShowModal(true);
   };
 
-  const deleteMovie = (id: string) => {
-    api.delete(`/movies/${id}`)
-      .then(() => {
-        setShowModal(false); 
-        setTimeout(() => {
-          setModalMessage('Película eliminada.');
-          setModalAction(undefined);
-          setShowModal(true);
-        }, 300);
+  const deleteMovie = async (id: string) => {
+    try {
+      await movieService.delete(id);
+      setShowModal(false);
+      
+      setTimeout(() => {
+        showSuccessModal('Película eliminada.');
         fetchMovies();
-      })
-      .catch(err => {
-        setShowModal(false);
-        setTimeout(() => {
-          setModalMessage(err.response.data.error || 'Error al eliminar');
-          setModalAction(undefined);
-          setShowModal(true);
-        }, 300);
-      });
+      }, 300);
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      setShowModal(false);
+      setTimeout(() => {
+        showErrorModal(apiError?.response?.data?.error || 'Error al eliminar');
+      }, 300);
+    }
   };
-  
 
   const startEditing = (movie: Movie) => {
     setEditingMovie(movie);
