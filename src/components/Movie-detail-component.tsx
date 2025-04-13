@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
-import { Movie } from "../interfaces/Movie";
+import { IMovie } from "../interfaces/IMovie";
 
 
 export const MovieDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [movie, setMovie] = useState<Movie | null>(null);
+  const [movie, setMovie] = useState<IMovie | null>(null);
 
   useEffect(() => {
     api.get(`/movies/${id}`)

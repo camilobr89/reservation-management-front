@@ -1,13 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { movieService } from '../services/movieService';
-import { Movie } from '../interfaces/Movie';
-
-interface ModalProps {
-  message: string;
-  onConfirm?: () => void;
-  onClose: () => void;
-}
+import { IMovie } from '../interfaces/IMovie';
+import { IModalPropsForm } from '../interfaces/IModalProps';
 
 type ApiError = {
   response?: {
@@ -18,8 +13,8 @@ type ApiError = {
 };
 
 export const ManageMovies = () => {
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
+  const [movies, setMovies] = useState<IMovie[]>([]);
+  const [editingMovie, setEditingMovie] = useState<IMovie | null>(null);
   const [title, setTitle] = useState('');
   const [genre, setGenre] = useState('');
   const [duration, setDuration] = useState('');
@@ -30,18 +25,18 @@ export const ManageMovies = () => {
   const [modalMessage, setModalMessage] = useState('');
   const [modalAction, setModalAction] = useState<(() => void) | undefined>(undefined);
 
-  useEffect(() => {
-    fetchMovies();
-  }, []);
-
-  const fetchMovies = async () => {
+  const fetchMovies = useCallback(async () => {
     try {
       const data = await movieService.getAll();
       setMovies(data);
     } catch {
       showErrorModal('Error al cargar las películas');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchMovies();
+  }, [fetchMovies]);
 
   const resetForm = () => {
     setEditingMovie(null);
@@ -117,7 +112,7 @@ export const ManageMovies = () => {
     }
   };
 
-  const startEditing = (movie: Movie) => {
+  const startEditing = (movie: IMovie) => {
     setEditingMovie(movie);
     setTitle(movie.title);
     setGenre(movie.genre);
@@ -125,7 +120,7 @@ export const ManageMovies = () => {
     setRating(movie.rating);
   };
 
-  const Modal = ({ message, onConfirm, onClose }: ModalProps) => (
+  const Modal = ({ message, onConfirm, onClose }: IModalPropsForm) => (
     <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 backdrop-blur-md"
     style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
     >

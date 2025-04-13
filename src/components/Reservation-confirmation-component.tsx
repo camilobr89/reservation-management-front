@@ -1,19 +1,10 @@
 import { useState } from 'react';
 import { api } from '../services/api';
-
-interface Reservation {
-  id: string;
-  movieId: string;
-  roomId: string;
-  schedule: string;
-  seats: string[];
-  title: string;
-  name: string;
-}
+import { IReservationConfirm } from '../interfaces/IReservation';
 
 export const UserReservations = () => {
   const [email, setEmail] = useState('');
-  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [reservations, setReservations] = useState<IReservationConfirm[]>([]);
   const [error, setError] = useState('');
   const [modalMessage, setModalMessage] = useState('');
   const [showModal, setShowModal] = useState(false);

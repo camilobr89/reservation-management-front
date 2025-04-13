@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
 import { api } from "../services/api";
-import { Movie } from "../interfaces/Movie";
-import { Room } from "../interfaces/Room";
-import { Reservation } from "../interfaces/Reservation";
-import { ModalProps } from "../interfaces/ModalProps";
+import { IMovie } from "../interfaces/IMovie";
+import { IRoom } from "../interfaces/IRoom";
+import { IReservationPayload } from "../interfaces/IReservation";
+import { IModalProps } from "../interfaces/IModalProps";
 import { isValidEmail } from "../utils/validators";
 import { AVAILABLE_TIMES } from "../constants/schedules";
 
 export const MoviesList = () => {
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
-  const [rooms, setRooms] = useState<Room[]>([]);
+  const [movies, setMovies] = useState<IMovie[]>([]);
+  const [selectedMovie, setSelectedMovie] = useState<IMovie | null>(null);
+  const [rooms, setRooms] = useState<IRoom[]>([]);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<IRoom | null>(null);
   const [reservedSeats, setReservedSeats] = useState<string[]>([]);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [userEmail, setUserEmail] = useState<string>("");
@@ -47,7 +47,7 @@ export const MoviesList = () => {
       const schedule = `${selectedDate} ${selectedTime}`;
       api.get(`/reservations?roomId=${selectedRoom.id}&schedule=${encodeURIComponent(schedule)}`)
         .then(response => {
-          const occupiedSeats = response.data.flatMap((res: Reservation) => res.seats || []);
+          const occupiedSeats = response.data.flatMap((res: IReservationPayload) => res.seats || []);
           setReservedSeats(occupiedSeats);
         })
         .catch(error => {
@@ -59,7 +59,7 @@ export const MoviesList = () => {
     }
   }, [selectedRoom, selectedTime, selectedDate]);
   
-  const Modal = ({ message, loading, onClose }: ModalProps) => (
+  const Modal = ({ message, loading, onClose }: IModalProps) => (
     <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 backdrop-blur-md"
     style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
     >

@@ -1,17 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { api } from '../services/api';
-import { Room } from '../interfaces/Room';
-
-interface ModalProps {
-  message: string;
-  onConfirm?: () => void;
-  onClose: () => void;
-}
+import { IRoom } from '../interfaces/IRoom';
+import { IModalPropsForm } from '../interfaces/IModalProps';
 
 export const ManageRooms = () => {
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [editingRoom, setEditingRoom] = useState<Room | null>(null);
+  const [rooms, setRooms] = useState<IRoom[]>([]);
+  const [editingRoom, setEditingRoom] = useState<IRoom | null>(null);
   const [name, setName] = useState('');
   const [capacity, setCapacity] = useState('');
 
@@ -90,13 +85,13 @@ export const ManageRooms = () => {
       });
   };
 
-  const startEditing = (room: Room) => {
+  const startEditing = (room: IRoom) => {
     setEditingRoom(room);
     setName(room.name);
     setCapacity(room.capacity.toString());
   };
 
-  const Modal = ({ message, onConfirm, onClose }: ModalProps) => (
+  const Modal = ({ message, onConfirm, onClose }: IModalPropsForm) => (
     <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 backdrop-blur-md"
     style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}>
       <div className="bg-white p-8 rounded-xl shadow-lg">
